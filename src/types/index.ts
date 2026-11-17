@@ -2,7 +2,7 @@
 export type UserRole = 'buyer' | 'dealer' | 'admin';
 
 export interface User {
-  id: number;
+  id: string | number;
   name: string;
   email: string;
   phone?: string;
@@ -113,6 +113,22 @@ export interface Favorite {
   vehicle_id: number;
   created_at: Date;
   vehicle?: Vehicle;
+}
+
+// Accessory Types
+export type AccessoryAvailability = 'immediate' | 'on_order';
+
+export interface Accessory {
+  id: number;
+  name: string;
+  description?: string;
+  price: number;
+  currency: string;
+  availability: AccessoryAvailability;
+  compatible_vehicles: string[];
+  image_url?: string;
+  status: string;
+  created_at: Date;
 }
 
 // Search Filter Types

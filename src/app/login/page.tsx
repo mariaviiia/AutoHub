@@ -2,34 +2,47 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Car, Mail, Lock, ArrowRight } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Car, Mail, Lock, ArrowRight, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAuthStore } from '@/stores/useAuthStore';
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuthStore();
+  const [error, setError] = useState('');
+  const { login, loginWithGoogle, loginWithFacebook, isLoading, isAuthenticated } = useAuthStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    setError('');
 
-    // Mock authentication - replace with actual API call
-    setTimeout(() => {
-      login({
-        id: 1,
-        name: 'Usuario Demo',
-        email: email,
-        phone: '+52 555 123 4567',
-        role: 'buyer',
-        created_at: new Date(),
-      });
-      setIsLoading(false);
-    }, 1000);
+    const result = await login(email, password);
+
+    if (result.success) {
+      router.push('/');
+    } else {
+      setError(result.error || 'Error al iniciar sesión');
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setError('');
+    const result = await loginWithGoogle();
+    if (!result.success) {
+      setError(result.error || 'Error al iniciar sesión con Google');
+    }
+  };
+
+  const handleFacebookLogin = async () => {
+    setError('');
+    const result = await loginWithFacebook();
+    if (!result.success) {
+      setError(result.error || 'Error al iniciar sesión con Facebook');
+    }
   };
 
   return (
@@ -51,6 +64,13 @@ export default function LoginPage() {
                 Ingresa tus credenciales para acceder a tu cuenta
               </p>
             </div>
+
+            {error && (
+              <div className="mb-4 p-3 bg-red-900/50 border border-red-700 rounded-lg flex items-center text-red-200">
+                <AlertCircle className="h-5 w-5 mr-2" />
+                <span className="text-sm">{error}</span>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
@@ -118,7 +138,13 @@ export default function LoginPage() {
               </div>
 
               <div className="mt-6 grid grid-cols-2 gap-4">
-                <Button variant="outline" className="border-gray-700 text-white hover:bg-gray-800">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="border-gray-700 text-white hover:bg-gray-800"
+                  onClick={handleGoogleLogin}
+                  disabled={isLoading}
+                >
                   <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
                     <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                     <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -127,7 +153,13 @@ export default function LoginPage() {
                   </svg>
                   Google
                 </Button>
-                <Button variant="outline" className="border-gray-700 text-white hover:bg-gray-800">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="border-gray-700 text-white hover:bg-gray-800"
+                  onClick={handleFacebookLogin}
+                  disabled={isLoading}
+                >
                   <svg className="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                   </svg>

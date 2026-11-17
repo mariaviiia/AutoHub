@@ -4,6 +4,7 @@ import "./globals.css";
 import { ReactQueryProvider } from "@/lib/react-query";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { SessionProvider } from "@/components/providers/SessionProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,9 +33,11 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <ReactQueryProvider>
-          <Header />
-          <main className="flex-1">{children}</main>
-          <Footer />
+          <SessionProvider>
+            <Header />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </SessionProvider>
         </ReactQueryProvider>
       </body>
     </html>

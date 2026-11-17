@@ -1,83 +1,70 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Heart, Phone, Mail, Calendar, MapPin, Fuel, Gauge, Settings, Shield } from 'lucide-react';
+import { ArrowLeft, Heart, Phone, Mail, Calendar, MapPin, Fuel, Gauge, Settings, Shield, Loader } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Vehicle } from '@/types';
 import { useFavoriteStore } from '@/stores/useFavoriteStore';
+import { fetchVehicleById } from '@/lib/vehicles';
 
-// Mock vehicle data
-const mockVehicle: Vehicle = {
-  id: 1,
-  dealer_id: 1,
-  vin: '1HGCM82633A123456',
-  make: 'Toyota',
-  model: 'Camry',
-  year: 2020,
-  price: 25000,
-  mileage_km: 45000,
-  fuel_type: 'Gasolina',
-  transmission: 'Automática',
-  color: 'Blanco',
-  condition: 'used',
-  status: 'active',
-  published_at: new Date(),
-  images: [
-    {
-      id: 1,
-      vehicle_id: 1,
-      url: 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=1200',
-      order: 0,
-      is_primary: true,
-    },
-    {
-      id: 2,
-      vehicle_id: 1,
-      url: 'https://images.unsplash.com/photo-1542362567-b07e54358753?w=1200',
-      order: 1,
-      is_primary: false,
-    },
-    {
-      id: 3,
-      vehicle_id: 1,
-      url: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=1200',
-      order: 2,
-      is_primary: false,
-    },
-    {
-      id: 4,
-      vehicle_id: 1,
-      url: 'https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=1200',
-      order: 3,
-      is_primary: false,
-    },
-  ],
-  dealer: {
-    id: 1,
-    name: 'Auto Premium',
-    license_number: 'AUT-001',
-    address: 'Av. Reforma 123, Col. Centro',
-    city: 'Ciudad de México',
-    country: 'México',
-    status: 'active',
-    created_at: new Date(),
-  },
-};
-
-export default function VehicleDetailPage({ params }: { params: { id: string } }) {
+export default function VehicleDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const [selectedImage, setSelectedImage] = useState(0);
+  const [vehicle, setVehicle] = useState<Vehicle | null>(null);
+  const [loading, setLoading] = useState(true);
   const { addFavorite, removeFavorite, isFavorite } = useFavoriteStore();
-  const vehicle = mockVehicle;
+
+  const { id } = use(params);
+
+  useEffect(() => {
+    const loadVehicle = async () => {
+      try {
+        setLoading(true);
+        const vehicleData = await fetchVehicleById(id);
+        setVehicle(vehicleData);
+      } catch (error) {
+        console.error('Error loading vehicle:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadVehicle();
+  }, [id]);
 
   const handleFavoriteToggle = () => {
+    if (!vehicle) return;
     if (isFavorite(vehicle.id)) {
       removeFavorite(vehicle.id);
     } else {
       addFavorite(vehicle);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <Loader className="h-12 w-12 text-[var(--color-gold)] animate-spin mx-auto mb-4" />
+          <p className="text-white">Cargando vehículo...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!vehicle) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-white text-lg">Vehículo no encontrado</p>
+          <Link href="/search" className="text-[var(--color-gold)] hover:underline mt-4 inline-block">
+            Volver a la búsqueda
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-black">
@@ -147,7 +134,7 @@ export default function VehicleDetailPage({ params }: { params: { id: string } }
                   </div>
                   <div className="text-right">
                     <p className="text-3xl font-bold text-blue-600">
-                      ${vehicle.price.toLocaleString()}
+                      ${vehicle.price?.toLocaleString()}
                     </p>
                     <p className="text-sm text-gray-600">+ impuestos</p>
                   </div>
@@ -311,7 +298,7 @@ export default function VehicleDetailPage({ params }: { params: { id: string } }
                   <div>
                     <label className="block text-sm font-medium mb-2">Monto del Préstamo</label>
                     <p className="text-2xl font-bold text-blue-600">
-                      ${vehicle.price.toLocaleString()}
+                      ${vehicle.price?.toLocaleString()}
                     </p>
                   </div>
                   <div>

@@ -2,13 +2,15 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Car, Mail, Lock, Building, Phone, MapPin, FileText, ArrowRight } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Car, Mail, Lock, Building, Phone, MapPin, FileText, ArrowRight, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAuthStore } from '@/stores/useAuthStore';
 
 export default function DealerRegisterPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     businessName: '',
     licenseNumber: '',
@@ -19,25 +21,38 @@ export default function DealerRegisterPage() {
     password: '',
     confirmPassword: '',
   });
-  const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuthStore();
+  const [error, setError] = useState('');
+  const { register, isLoading } = useAuthStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    setError('');
 
-    // Mock registration - replace with actual API call
-    setTimeout(() => {
-      login({
-        id: 1,
-        name: formData.businessName,
-        email: formData.email,
-        phone: formData.phone,
-        role: 'dealer',
-        created_at: new Date(),
-      });
-      setIsLoading(false);
-    }, 1000);
+    // Validate password confirmation
+    if (formData.password !== formData.confirmPassword) {
+      setError('Las contraseñas no coinciden');
+      return;
+    }
+
+    // Validate password strength
+    if (formData.password.length < 8) {
+      setError('La contraseña debe tener al menos 8 caracteres');
+      return;
+    }
+
+    const result = await register(
+      formData.email,
+      formData.password,
+      formData.businessName,
+      formData.phone,
+      'dealer'
+    );
+
+    if (result.success) {
+      router.push('/');
+    } else {
+      setError(result.error || 'Error al registrar concesionario');
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -66,6 +81,13 @@ export default function DealerRegisterPage() {
                 Únete a Sr Paisa y comienza a vender tus vehículos
               </p>
             </div>
+
+            {error && (
+              <div className="mb-4 p-3 bg-red-900/50 border border-red-700 rounded-lg flex items-center text-red-200">
+                <AlertCircle className="h-5 w-5 mr-2" />
+                <span className="text-sm">{error}</span>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
